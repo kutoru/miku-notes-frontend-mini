@@ -1,7 +1,7 @@
 export function formatDate(timestampInSeconds: number): string {
   const date = new Date(timestampInSeconds * 1000);
 
-  let year = date.getFullYear();
+  let year = date.getFullYear() % 1000;
   let month = date.getMonth() + 1;
   let day = date.getDate();
   let hour = date.getHours();

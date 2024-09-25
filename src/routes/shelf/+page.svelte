@@ -7,6 +7,7 @@
   import FloatingButton from "$components/FloatingButton.svelte";
   import Upload from "$components/icons/Upload.svelte";
   import Copy from "$components/icons/Copy.svelte";
+  import FileCard from "$components/FileCard.svelte";
 
   let shelf: Shelf | undefined;
   $: disabled = !shelf;
@@ -20,6 +21,10 @@
   function onTextChange(e: any) {
     text = e.target.value;
   }
+
+  onMount(() => {
+    load();
+  });
 
   function save() {
     console.log("save");
@@ -46,6 +51,14 @@
         created: loadedShelf.created,
         hash: "aoaoaoaoao342343",
         id: 2,
+        name: "long filename with spaces-anddashes.png",
+        size: 9238959,
+        user_id: 1,
+      },
+      {
+        created: loadedShelf.created,
+        hash: "aoaoaoaoao342343",
+        id: 3,
         name: "filename.png",
         size: 9238959,
         user_id: 1,
@@ -53,7 +66,7 @@
       {
         created: loadedShelf.created,
         hash: "aoaoaoaoao342343",
-        id: 2,
+        id: 4,
         name: "filename.png",
         size: 9238959,
         user_id: 1,
@@ -61,7 +74,7 @@
       {
         created: loadedShelf.created,
         hash: "aoaoaoaoao342343",
-        id: 1,
+        id: 5,
         name: "filename.png",
         size: 9238959,
         user_id: 1,
@@ -69,7 +82,7 @@
       {
         created: loadedShelf.created,
         hash: "aoaoaoaoao342343",
-        id: 2,
+        id: 6,
         name: "filename.png",
         size: 9238959,
         user_id: 1,
@@ -77,7 +90,15 @@
       {
         created: loadedShelf.created,
         hash: "aoaoaoaoao342343",
-        id: 2,
+        id: 7,
+        name: "filenamefilenamefilenamefilenamefilenamefilenamefilenamefilenamefilenamefilenamefilenamefilename.png",
+        size: 9238959,
+        user_id: 1,
+      },
+      {
+        created: loadedShelf.created,
+        hash: "aoaoaoaoao342343",
+        id: 8,
         name: "filename.png",
         size: 9238959,
         user_id: 1,
@@ -85,23 +106,7 @@
       {
         created: loadedShelf.created,
         hash: "aoaoaoaoao342343",
-        id: 1,
-        name: "filename.png",
-        size: 9238959,
-        user_id: 1,
-      },
-      {
-        created: loadedShelf.created,
-        hash: "aoaoaoaoao342343",
-        id: 2,
-        name: "filename.png",
-        size: 9238959,
-        user_id: 1,
-      },
-      {
-        created: loadedShelf.created,
-        hash: "aoaoaoaoao342343",
-        id: 2,
+        id: 9,
         name: "filename.png",
         size: 9238959,
         user_id: 1,
@@ -120,9 +125,21 @@
     console.log("clear");
   }
 
-  onMount(() => {
-    load();
-  });
+  function copyToClipboard() {
+    console.log("copyToClipboard");
+  }
+
+  function uploadFile() {
+    console.log("uploadFile");
+  }
+
+  async function deleteFile(fileId: number) {
+    console.log("deleteFile", fileId);
+  }
+
+  async function downloadFile(fileHash: string) {
+    console.log("downloadFile", fileHash);
+  }
 </script>
 
 <div class="flex flex-col h-full">
@@ -143,7 +160,7 @@
   >
     <FloatingButton
       {disabled}
-      onclick={() => {}}
+      onclick={copyToClipboard}
       class="right-0 bottom-0 absolute mb-1 me-1 md:mb-2 md:me-2"
       iconPath={Copy}
     />
@@ -171,7 +188,7 @@
   >
     <FloatingButton
       {disabled}
-      onclick={() => {}}
+      onclick={uploadFile}
       class="right-0 bottom-0 absolute mb-1 me-1 md:mb-2 md:me-2"
       iconPath={Upload}
     />
@@ -185,14 +202,8 @@
           class={"w-full grid grid-flow-row gap-1 overflow-y-auto " +
             "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 md:gap-2 p-1 md:p-2 pb-14 md:pb-16"}
         >
-          {#each shelf.files as file}
-            <div
-              class="rounded-md border-2 border-gray-950 h-fit text-center bg-[#00000050]"
-            >
-              {formatSize(file.size)}<br />
-              {file.name}<br />
-              {formatDate(file.created)}
-            </div>
+          {#each shelf.files as file (file.id)}
+            <FileCard {file} onDelete={deleteFile} onDownload={downloadFile} />
           {/each}
         </div>
       </div>
@@ -202,7 +213,7 @@
   <div class="w-100 h-1 rounded-full bg-gray-950 my-2 flex-none md:my-4" />
 
   <div class="flex gap-2 md:gap-4">
-    <Button onclick={load} class="flex-1">Refresh <Copy /></Button>
+    <Button onclick={load} class="flex-1">Refresh</Button>
     <Button {disabled} onclick={clear} class="flex-1">Clear</Button>
     <Button {disabled} onclick={convertToNote} class="flex-1">To note</Button>
     <Button {disabled} onclick={save} class="flex-1">Save</Button>

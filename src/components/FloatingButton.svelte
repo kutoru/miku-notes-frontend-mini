@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Svg from "./icons/Svg.svelte";
+
   let className = "";
   export { className as class };
   export let disabled = false;
@@ -16,16 +18,11 @@
     className}
 >
   {#if iconPath}
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      height="24px"
-      viewBox="0 -960 960 960"
-      width="24px"
+    <Svg
+      svgPath={iconPath}
       class={"fill-white m-auto tran-main " +
         "group-hover/fb:fill-gray-300 group-active/fb:fill-gray-400 group-disabled/fb:fill-gray-400"}
-    >
-      <svelte:component this={iconPath} />
-    </svg>
+    />
   {/if}
 
   <slot />
