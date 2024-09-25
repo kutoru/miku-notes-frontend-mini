@@ -3,11 +3,12 @@
   import Button from "$components/Button.svelte";
   import type { Shelf } from "$types/shelf";
   import { shelfGet } from "$lib/api";
-  import { formatDate, formatSize } from "$lib/util";
+  import { formatDate } from "$lib/util";
   import FloatingButton from "$components/FloatingButton.svelte";
   import Upload from "$components/icons/Upload.svelte";
   import Copy from "$components/icons/Copy.svelte";
   import FileCard from "$components/FileCard.svelte";
+  import NotificationPopup from "$components/NotificationPopup.svelte";
 
   let shelf: Shelf | undefined;
   $: disabled = !shelf;
@@ -16,6 +17,16 @@
     text = shelf.text;
   } else {
     text = "";
+  }
+
+  let notifLastShown = 0;
+  let notifMessage = "";
+  let notifDuration = 3000;
+
+  function showNotification(message: string, duration: number = 3000) {
+    notifMessage = message;
+    notifDuration = duration;
+    notifLastShown = Date.now();
   }
 
   function onTextChange(e: any) {
@@ -30,7 +41,7 @@
     console.log("save");
   }
 
-  async function load() {
+  async function load(silent: boolean = true) {
     shelf = undefined;
 
     const loadedShelf = await shelfGet();
@@ -115,6 +126,10 @@
     // loadedShelf.files = [];
 
     shelf = loadedShelf;
+
+    if (!silent) {
+      showNotification("Shelf has been refreshed");
+    }
   }
 
   function convertToNote() {
@@ -127,6 +142,7 @@
 
   function copyToClipboard() {
     console.log("copyToClipboard");
+    showNotification("Text has been copied");
   }
 
   function uploadFile() {
@@ -141,6 +157,13 @@
     console.log("downloadFile", fileHash);
   }
 </script>
+
+<NotificationPopup
+  bind:lastShown={notifLastShown}
+  bind:duration={notifDuration}
+>
+  {notifMessage}
+</NotificationPopup>
 
 <div class="flex flex-col h-full">
   <div class="flex cursor-default">
@@ -213,7 +236,7 @@
   <div class="w-100 h-1 rounded-full bg-gray-950 my-2 flex-none md:my-4" />
 
   <div class="flex gap-2 md:gap-4">
-    <Button onclick={load} class="flex-1">Refresh</Button>
+    <Button onclick={() => load(false)} class="flex-1">Refresh</Button>
     <Button {disabled} onclick={clear} class="flex-1">Clear</Button>
     <Button {disabled} onclick={convertToNote} class="flex-1">To note</Button>
     <Button {disabled} onclick={save} class="flex-1">Save</Button>
