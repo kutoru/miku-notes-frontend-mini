@@ -8,7 +8,8 @@
   import Upload from "$components/icons/Upload.svelte";
   import Copy from "$components/icons/Copy.svelte";
   import FileCard from "$components/FileCard.svelte";
-  import NotificationPopup from "$components/NotificationPopup.svelte";
+  import Popup from "$components/Popup.svelte";
+  import AlertDialog from "$components/AlertDialog.svelte";
 
   let shelf: Shelf | undefined;
   $: disabled = !shelf;
@@ -19,14 +20,39 @@
     text = "";
   }
 
-  let notifLastShown = 0;
-  let notifMessage = "";
-  let notifDuration = 3000;
+  let popupLastShown = 0;
+  let popupMessage = "";
+  let popupDuration = 3000;
 
   function showNotification(message: string, duration: number = 3000) {
-    notifMessage = message;
-    notifDuration = duration;
-    notifLastShown = Date.now();
+    popupMessage = message;
+    popupDuration = duration;
+    popupLastShown = Date.now();
+  }
+
+  let alertShown = false;
+  let alertOnConfirm: (() => Promise<void>) | undefined = undefined;
+  let alertCurrType: AlertType | undefined = undefined;
+
+  enum AlertType {
+    Clear,
+    ToNote,
+  }
+
+  function showAlert(alertType: AlertType) {
+    if (alertType === AlertType.Clear) {
+      alertOnConfirm = clear;
+      alertCurrType = AlertType.Clear;
+    } else if (alertType === AlertType.ToNote) {
+      alertOnConfirm = convertToNote;
+      alertCurrType = AlertType.ToNote;
+    } else {
+      alertOnConfirm = undefined;
+      alertCurrType = undefined;
+      return;
+    }
+
+    alertShown = true;
   }
 
   function onTextChange(e: any) {
@@ -37,7 +63,7 @@
     load();
   });
 
-  function save() {
+  async function save() {
     console.log("save");
   }
 
@@ -132,20 +158,20 @@
     }
   }
 
-  function convertToNote() {
+  async function convertToNote() {
     console.log("convertToNote");
   }
 
-  function clear() {
+  async function clear() {
     console.log("clear");
   }
 
   function copyToClipboard() {
     console.log("copyToClipboard");
-    showNotification("Text has been copied");
+    //showNotification("Text has been copied");
   }
 
-  function uploadFile() {
+  async function uploadFile() {
     console.log("uploadFile");
   }
 
@@ -158,12 +184,21 @@
   }
 </script>
 
-<NotificationPopup
-  bind:lastShown={notifLastShown}
-  bind:duration={notifDuration}
->
-  {notifMessage}
-</NotificationPopup>
+<Popup bind:lastShown={popupLastShown} bind:duration={popupDuration}>
+  {popupMessage}
+</Popup>
+
+<AlertDialog bind:shown={alertShown} bind:onConfirm={alertOnConfirm}>
+  {#if alertCurrType === AlertType.Clear}
+    <span class="text-xl">Clear the shelf?</span>
+  {:else if alertCurrType === AlertType.ToNote}
+    <span class="text-xl">
+      Some input field for the note name as well as some other text
+    </span>
+  {:else}
+    <span class="text-xl">Undefined alert</span>
+  {/if}
+</AlertDialog>
 
 <div class="flex flex-col h-full">
   <div class="flex cursor-default">
@@ -237,8 +272,20 @@
 
   <div class="flex gap-2 md:gap-4">
     <Button onclick={() => load(false)} class="flex-1">Refresh</Button>
-    <Button {disabled} onclick={clear} class="flex-1">Clear</Button>
-    <Button {disabled} onclick={convertToNote} class="flex-1">To note</Button>
+    <Button
+      {disabled}
+      onclick={() => showAlert(AlertType.Clear)}
+      class="flex-1"
+    >
+      Clear
+    </Button>
+    <Button
+      {disabled}
+      onclick={() => showAlert(AlertType.ToNote)}
+      class="flex-1"
+    >
+      To note
+    </Button>
     <Button {disabled} onclick={save} class="flex-1">Save</Button>
   </div>
 </div>
