@@ -26,12 +26,14 @@ enum HttpMethod {
 async function callApi<T, U>(
   path: string,
   method: HttpMethod,
-  body: T | undefined = undefined
+  body: T | undefined = undefined,
+  keepalive: boolean = false
 ): Promise<ReqRes<U>> {
   const result: ResBody<U> | number = await fetch(API_URL + path, {
     method: method,
     headers: { "content-type": "application/json" },
     credentials: "include",
+    keepalive: keepalive,
     body: !body ? undefined : JSON.stringify(body),
   })
     .then((res) => {
@@ -85,7 +87,7 @@ export function shelfGet(): Promise<Shelf | undefined> {
 }
 
 export function shelfPatch(body: { text: string }): Promise<Shelf | undefined> {
-  return handleRequest(() => callApi("/shelf", HttpMethod.PATCH, body));
+  return handleRequest(() => callApi("/shelf", HttpMethod.PATCH, body, true));
 }
 
 export function shelfDelete(): Promise<Shelf | undefined> {

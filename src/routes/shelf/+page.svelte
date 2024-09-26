@@ -78,6 +78,12 @@
   }
 
   onMount(() => {
+    window.addEventListener("unload", () => {
+      if (shelf && shelfText != shelf.text) {
+        shelfPatch({ text: shelfText });
+      }
+    });
+
     load();
   });
 
