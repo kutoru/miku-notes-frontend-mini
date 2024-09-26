@@ -2,7 +2,13 @@
   import { onMount } from "svelte";
   import Button from "$components/Button.svelte";
   import type { Shelf } from "$types/shelf";
-  import { shelfGet, shelfPatch, filePost } from "$lib/api";
+  import {
+    shelfGet,
+    shelfPatch,
+    filePost,
+    fileDelete,
+    fileGet,
+  } from "$lib/api";
   import { formatDate } from "$lib/util";
   import FloatingButton from "$components/FloatingButton.svelte";
   import Upload from "$components/icons/Upload.svelte";
@@ -146,11 +152,22 @@
   }
 
   async function deleteFile(fileId: number) {
-    console.log("deleteFile", fileId);
+    const success = await fileDelete(fileId);
+    if (!success) {
+      showNotif("Could not delete the file");
+      return;
+    }
+
+    if (shelf) {
+      shelf.files = shelf.files.filter((f) => f.id != fileId);
+    }
   }
 
   async function downloadFile(fileHash: string) {
-    console.log("downloadFile", fileHash);
+    const success = await fileGet(fileHash);
+    if (!success) {
+      showNotif("Could not download the file");
+    }
   }
 </script>
 

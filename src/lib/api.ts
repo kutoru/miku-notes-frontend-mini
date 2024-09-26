@@ -134,10 +134,61 @@ export function filePost(
   });
 }
 
-// export function fileGet(fileHash: string): Promise<boolean | undefined> {
-//   return handleRequest(() => {});
-// }
+export async function fileDelete(fileId: number): Promise<boolean> {
+  const result: {} | undefined = await handleRequest(() =>
+    callApi("/files/" + fileId, HttpMethod.DELETE)
+  );
 
-// export function fileDelete(fileId: number): Promise<boolean | undefined> {
-//   return handleRequest(() => {});
-// }
+  return !!result;
+}
+
+export async function fileGet(fileHash: string): Promise<boolean> {
+  const result: {} | undefined = await handleRequest(async () => {
+    let status = -1;
+    let filename = "unknown";
+
+    const result: Blob | undefined = await fetch(
+      `${API_URL}/files/dl/${fileHash}`,
+      {
+        method: HttpMethod.GET,
+        credentials: "include",
+      }
+    )
+      .then((res) => {
+        if (!res.ok) {
+          status = res.status;
+          return undefined;
+        } else {
+          let name = res.headers.get("content-disposition")?.split("=")[1];
+          if (name) {
+            filename = name.slice(1, name.length - 1);
+          }
+
+          return res.blob();
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        return undefined;
+      });
+
+    if (!result) {
+      return { code: status, data: undefined };
+    }
+
+    downloadBlob(result, filename);
+
+    return { code: 0, data: {} };
+  });
+
+  return !!result;
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
