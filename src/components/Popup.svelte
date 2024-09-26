@@ -26,7 +26,7 @@
 </script>
 
 <div
-  class={"top-0 absolute tran-main px-2 pt-2 w-full left-0 flex pointer-events-none " +
+  class={"top-0 absolute tran-main px-2 pt-2 w-full left-0 flex pointer-events-none z-40 " +
     (shown ? "" : "-translate-y-12")}
 >
   <div

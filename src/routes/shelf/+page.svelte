@@ -5,6 +5,8 @@
   import {
     shelfGet,
     shelfPatch,
+    shelfDelete,
+    shelfToNotePost,
     filePost,
     fileDelete,
     fileGet,
@@ -19,12 +21,13 @@
 
   let shelf: Shelf | undefined;
   $: disabled = !shelf;
+  let noteTitleText = "";
   let textElement: HTMLTextAreaElement;
-  let text = "";
+  let shelfText = "";
   $: if (shelf) {
-    text = shelf.text;
+    shelfText = shelf.text;
   } else {
-    text = "";
+    shelfText = "";
   }
 
   let popupLastShown = 0;
@@ -38,7 +41,8 @@
   }
 
   let alertShown = false;
-  let alertOnConfirm: (() => Promise<void>) | undefined = undefined;
+  let alertOnConfirm: (() => Promise<boolean>) | undefined = undefined;
+  let alertOnCancel: (() => Promise<void>) | undefined = undefined;
   let alertCurrType: AlertType | undefined = undefined;
 
   enum AlertType {
@@ -49,12 +53,19 @@
   function showAlert(alertType: AlertType) {
     if (alertType === AlertType.Clear) {
       alertOnConfirm = clear;
+      alertOnCancel = undefined;
       alertCurrType = AlertType.Clear;
     } else if (alertType === AlertType.ToNote) {
       alertOnConfirm = convertToNote;
+      alertOnCancel = async () => {
+        setTimeout(() => {
+          noteTitleText = "";
+        }, 150);
+      };
       alertCurrType = AlertType.ToNote;
     } else {
       alertOnConfirm = undefined;
+      alertOnCancel = undefined;
       alertCurrType = undefined;
       return;
     }
@@ -63,7 +74,7 @@
   }
 
   function onTextChange(e: any) {
-    text = e.target.value;
+    shelfText = e.target.value;
   }
 
   onMount(() => {
@@ -71,7 +82,7 @@
   });
 
   async function save(silent: boolean = true) {
-    if (text === shelf?.text) {
+    if (shelfText === shelf?.text) {
       if (!silent) {
         showNotif("The shelf's text hasn't changed");
       }
@@ -79,12 +90,13 @@
       return;
     }
 
-    const updatedShelf = await shelfPatch({ text: text });
+    const updatedShelf = await shelfPatch({ text: shelfText });
     if (!updatedShelf) {
       showNotif("Could not save the shelf");
       return;
     }
 
+    updatedShelf.files = shelf ? shelf.files : [];
     shelf = updatedShelf;
 
     if (!silent) {
@@ -109,11 +121,39 @@
   }
 
   async function convertToNote() {
-    console.log("convertToNote");
+    if (!noteTitleText) {
+      showNotif("Can't create a note with empty title");
+      return false;
+    }
+
+    const updatedShelf = await shelfToNotePost({
+      note_title: noteTitleText,
+      note_text: shelfText,
+    });
+
+    noteTitleText = "";
+    if (!updatedShelf) {
+      showNotif("Could not convert the shelf");
+      return true;
+    }
+
+    shelf = updatedShelf;
+
+    showNotif("The shelf has been converted");
+    return true;
   }
 
   async function clear() {
-    console.log("clear");
+    const updatedShelf = await shelfDelete();
+    if (!updatedShelf) {
+      showNotif("Could not clear the shelf");
+      return true;
+    }
+
+    shelf = updatedShelf;
+
+    showNotif("The shelf has been cleared");
+    return true;
   }
 
   async function copyToClipboard() {
@@ -175,13 +215,20 @@
   {popupMessage}
 </Popup>
 
-<AlertDialog bind:shown={alertShown} bind:onConfirm={alertOnConfirm}>
+<AlertDialog
+  bind:shown={alertShown}
+  bind:onConfirm={alertOnConfirm}
+  bind:onCancel={alertOnCancel}
+>
   {#if alertCurrType === AlertType.Clear}
     <span class="text-xl">Clear the shelf?</span>
   {:else if alertCurrType === AlertType.ToNote}
-    <span class="text-xl">
-      Some input field for the note name as well as some other text
-    </span>
+    <div class="text-xl">Convert the shelf to a new note</div>
+    <input
+      bind:value={noteTitleText}
+      class="mt-4 w-full text-lg p-1 bg-[#00000050] outline-none rounded-md placeholder-gray-400"
+      placeholder="New note title..."
+    />
   {:else}
     <span class="text-xl">Undefined alert</span>
   {/if}
@@ -217,10 +264,11 @@
       </div>
     {:else}
       <textarea
+        placeholder="Shelf text..."
         bind:this={textElement}
-        value={text}
+        value={shelfText}
         on:input={onTextChange}
-        class={"rounded-md p-1 size-full bg-transparent pb-14 md:pb-16 " +
+        class={"rounded-md p-1 size-full bg-transparent pb-14 md:pb-16 placeholder-gray-400 " +
           "text-inherit outline-none resize-none"}
         style="scrollbar-width: thin;"
       />
