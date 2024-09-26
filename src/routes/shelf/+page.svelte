@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import Button from "$components/Button.svelte";
   import type { Shelf } from "$types/shelf";
-  import { shelfGet } from "$lib/api";
+  import { shelfGet, shelfPatch } from "$lib/api";
   import { formatDate } from "$lib/util";
   import FloatingButton from "$components/FloatingButton.svelte";
   import Upload from "$components/icons/Upload.svelte";
@@ -13,6 +13,7 @@
 
   let shelf: Shelf | undefined;
   $: disabled = !shelf;
+  let textElement: HTMLTextAreaElement;
   let text = "";
   $: if (shelf) {
     text = shelf.text;
@@ -24,7 +25,7 @@
   let popupMessage = "";
   let popupDuration = 3000;
 
-  function showNotification(message: string, duration: number = 3000) {
+  function showNotif(message: string, duration: number = 3000) {
     popupMessage = message;
     popupDuration = duration;
     popupLastShown = Date.now();
@@ -63,8 +64,26 @@
     load();
   });
 
-  async function save() {
-    console.log("save");
+  async function save(silent: boolean = true) {
+    if (text === shelf?.text) {
+      if (!silent) {
+        showNotif("The shelf's text hasn't changed");
+      }
+
+      return;
+    }
+
+    const updatedShelf = await shelfPatch({ text: text });
+    if (!updatedShelf) {
+      showNotif("Could not save the shelf");
+      return;
+    }
+
+    shelf = updatedShelf;
+
+    if (!silent) {
+      showNotif("Shelf has been saved");
+    }
   }
 
   async function load(silent: boolean = true) {
@@ -72,89 +91,14 @@
 
     const loadedShelf = await shelfGet();
     if (!loadedShelf) {
-      console.log("Could not load the shelf");
+      showNotif("Could not load the shelf");
       return;
     }
-    loadedShelf.files = [
-      {
-        created: loadedShelf.created,
-        hash: "aoaoaoaoao342343",
-        id: 1,
-        name: "filename.png",
-        size: 9238959,
-        user_id: 1,
-      },
-      {
-        created: loadedShelf.created,
-        hash: "aoaoaoaoao342343",
-        id: 2,
-        name: "long filename with spaces-anddashes.png",
-        size: 9238959,
-        user_id: 1,
-      },
-      {
-        created: loadedShelf.created,
-        hash: "aoaoaoaoao342343",
-        id: 3,
-        name: "filename.png",
-        size: 9238959,
-        user_id: 1,
-      },
-      {
-        created: loadedShelf.created,
-        hash: "aoaoaoaoao342343",
-        id: 4,
-        name: "filename.png",
-        size: 9238959,
-        user_id: 1,
-      },
-      {
-        created: loadedShelf.created,
-        hash: "aoaoaoaoao342343",
-        id: 5,
-        name: "filename.png",
-        size: 9238959,
-        user_id: 1,
-      },
-      {
-        created: loadedShelf.created,
-        hash: "aoaoaoaoao342343",
-        id: 6,
-        name: "filename.png",
-        size: 9238959,
-        user_id: 1,
-      },
-      {
-        created: loadedShelf.created,
-        hash: "aoaoaoaoao342343",
-        id: 7,
-        name: "filenamefilenamefilenamefilenamefilenamefilenamefilenamefilenamefilenamefilenamefilenamefilename.png",
-        size: 9238959,
-        user_id: 1,
-      },
-      {
-        created: loadedShelf.created,
-        hash: "aoaoaoaoao342343",
-        id: 8,
-        name: "filename.png",
-        size: 9238959,
-        user_id: 1,
-      },
-      {
-        created: loadedShelf.created,
-        hash: "aoaoaoaoao342343",
-        id: 9,
-        name: "filename.png",
-        size: 9238959,
-        user_id: 1,
-      },
-    ];
-    // loadedShelf.files = [];
 
     shelf = loadedShelf;
 
     if (!silent) {
-      showNotification("Shelf has been refreshed");
+      showNotif("Shelf has been refreshed");
     }
   }
 
@@ -166,9 +110,11 @@
     console.log("clear");
   }
 
-  function copyToClipboard() {
-    console.log("copyToClipboard");
-    //showNotification("Text has been copied");
+  async function copyToClipboard() {
+    textElement.select();
+    textElement.setSelectionRange(0, textElement.value.length);
+    document.execCommand("copy");
+    showNotif("Text has been copied");
   }
 
   async function uploadFile() {
@@ -230,6 +176,7 @@
       </div>
     {:else}
       <textarea
+        bind:this={textElement}
         value={text}
         on:input={onTextChange}
         class={"rounded-md p-1 size-full bg-transparent pb-14 md:pb-16 " +
@@ -286,6 +233,6 @@
     >
       To note
     </Button>
-    <Button {disabled} onclick={save} class="flex-1">Save</Button>
+    <Button {disabled} onclick={() => save(false)} class="flex-1">Save</Button>
   </div>
 </div>

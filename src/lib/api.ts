@@ -83,8 +83,8 @@ export function shelfGet(): Promise<Shelf | undefined> {
   return handleRequest(() => callApi("/shelf", HttpMethod.GET));
 }
 
-export function shelfPost(body: { text: string }): Promise<Shelf | undefined> {
-  return handleRequest(() => callApi("/shelf", HttpMethod.POST, body));
+export function shelfPatch(body: { text: string }): Promise<Shelf | undefined> {
+  return handleRequest(() => callApi("/shelf", HttpMethod.PATCH, body));
 }
 
 export function shelfDelete(): Promise<Shelf | undefined> {
