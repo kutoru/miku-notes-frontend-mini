@@ -25,7 +25,7 @@ export function formatDate(timestampInSeconds: number): string {
 }
 
 export function formatSize(sizeInKb: number): string {
-  const mul = 1000;
+  const mul = 1024;
 
   let fileSize;
   let postfix;

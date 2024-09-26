@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import Button from "$components/Button.svelte";
   import type { Shelf } from "$types/shelf";
-  import { shelfGet, shelfPatch } from "$lib/api";
+  import { shelfGet, shelfPatch, filePost } from "$lib/api";
   import { formatDate } from "$lib/util";
   import FloatingButton from "$components/FloatingButton.svelte";
   import Upload from "$components/icons/Upload.svelte";
@@ -118,7 +118,31 @@
   }
 
   async function uploadFile() {
-    console.log("uploadFile");
+    const input = document.createElement("input");
+    input.type = "file";
+    input.click();
+
+    const file: File | undefined = await new Promise((res, rej) => {
+      input.onchange = (e: Event) => {
+        res((e.target as HTMLInputElement | null)?.files?.[0]);
+      };
+    });
+
+    if (!file || !shelf) {
+      return;
+    }
+
+    const fileInfo = await filePost(shelf.id, file);
+    if (!fileInfo) {
+      showNotif("Could not upload the file");
+      return;
+    }
+
+    if (!shelf) {
+      return;
+    }
+
+    shelf.files = [...shelf.files, fileInfo];
   }
 
   async function deleteFile(fileId: number) {

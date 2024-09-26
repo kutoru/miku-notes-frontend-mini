@@ -1,3 +1,4 @@
+import type { FileInfo } from "$types/file";
 import type { Shelf } from "$types/shelf";
 
 const API_URL = "http://192.168.1.12:3030";
@@ -98,9 +99,40 @@ export function shelfToNotePost(body: {
   return handleRequest(() => callApi("/shelf/to-note", HttpMethod.POST, body));
 }
 
-// export function filePost(file: unknown): Promise<FileInfo | undefined> {
-//   return handleRequest(() => {});
-// }
+export function filePost(
+  shelfId: number,
+  file: File
+): Promise<FileInfo | undefined> {
+  return handleRequest(async () => {
+    const formData = new FormData();
+    formData.append("shelf_id", "" + shelfId);
+    formData.append("file_size", "" + file.size);
+    formData.append("file", file);
+
+    const result: ResBody<FileInfo> | number = await fetch(API_URL + "/files", {
+      method: HttpMethod.POST,
+      credentials: "include",
+      body: formData,
+    })
+      .then((res) => {
+        if (!res.ok) {
+          return res.status;
+        } else {
+          return res.json();
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        return -1;
+      });
+
+    if (typeof result === "number") {
+      return { code: result, data: undefined };
+    } else {
+      return { code: 0, data: result.data };
+    }
+  });
+}
 
 // export function fileGet(fileHash: string): Promise<boolean | undefined> {
 //   return handleRequest(() => {});
